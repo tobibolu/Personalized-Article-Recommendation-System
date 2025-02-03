@@ -1,0 +1,12 @@
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore macOS system file
+.DS_Store
+
+# Ignore pickle files
+*.pkl
+
+# Ignore joblib files
+*.joblib
+
