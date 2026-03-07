@@ -88,6 +88,14 @@ All four methods are compared using consistent metrics:
 - **RMSE** for matrix factorization prediction accuracy
 - **Coverage** for recommendation diversity
 
+Evaluation uses a leave-one-out holdout protocol (one hidden interaction per user) to avoid train/evaluation leakage.
+
+| Method | Precision@10 | Recall@10 | NDCG@10 |
+|--------|-------------|-----------|---------|
+| Rank-Based | 0.006 | 0.060 | 0.033 |
+| Collaborative | 0.046 | 0.460 | 0.369 |
+| SVD (k=50) | 0.078 | 0.780 | 0.684 |
+
 ## Dataset
 
 - **45,993** user-article interactions from **5,148** unique users across **714** articles

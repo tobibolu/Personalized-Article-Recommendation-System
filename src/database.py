@@ -3,6 +3,7 @@
 Demonstrates SQL proficiency by loading interaction data into a relational
 database and running analytical queries.
 """
+from __future__ import annotations
 
 import os
 import sqlite3

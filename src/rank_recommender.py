@@ -3,6 +3,7 @@
 Recommends the most popular articles to all users. Serves as a baseline
 and a cold-start fallback when no user history is available.
 """
+from __future__ import annotations
 
 import pandas as pd
 

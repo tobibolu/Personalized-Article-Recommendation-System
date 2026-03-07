@@ -10,7 +10,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from src.data_loader import load_interactions, load_articles, create_user_item_matrix
 from src.rank_recommender import get_top_articles, get_top_article_ids, recommendation_coverage
 from src.content_based import create_content_matrix, find_similar_articles
-from src.evaluation import precision_at_k, recall_at_k, ndcg_at_k
+from src.evaluation import (
+    evaluate_recommendations,
+    precision_at_k,
+    recall_at_k,
+    ndcg_at_k,
+)
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
 
@@ -81,3 +86,38 @@ class TestEvaluationMetrics:
 
     def test_ndcg_zero(self):
         assert ndcg_at_k([3, 4], {1, 2}, k=2) == 0.0
+
+
+class TestEvaluateRecommendations:
+    @pytest.fixture
+    def toy_matrix(self):
+        return pd.DataFrame(
+            {
+                1: [1, 1],
+                2: [1, 0],
+                3: [0, 1],
+            },
+            index=["u1", "u2"],
+        )
+
+    def test_supports_single_arg_recommenders(self, toy_matrix):
+        metrics = evaluate_recommendations(
+            toy_matrix,
+            recommend_fn=lambda _uid: [1, 2, 3],
+            k=3,
+            sample_size=2,
+            seed=7,
+        )
+        assert metrics["n_evaluated"] == 2
+
+    def test_uses_holdout_matrix_without_leakage(self, toy_matrix):
+        # Recommender returns only currently-visible items for the user.
+        # With a proper holdout matrix, held-out items are hidden and recall@K is 0.
+        metrics = evaluate_recommendations(
+            toy_matrix,
+            recommend_fn=lambda uid, uim: list(uim.columns[uim.loc[uid] == 1]),
+            k=3,
+            sample_size=2,
+            seed=7,
+        )
+        assert metrics["avg_recall@3"] == 0.0
