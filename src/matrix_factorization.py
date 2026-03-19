@@ -3,6 +3,7 @@
 Decomposes the user-item interaction matrix into latent factors to capture
 hidden patterns in user preferences and article characteristics.
 """
+from __future__ import annotations
 
 import numpy as np
 import pandas as pd

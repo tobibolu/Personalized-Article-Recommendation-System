@@ -2,6 +2,7 @@
 
 Recommends articles based on what similar users have read.
 """
+from __future__ import annotations
 
 import numpy as np
 import pandas as pd

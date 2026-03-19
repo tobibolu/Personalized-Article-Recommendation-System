@@ -1,9 +1,7 @@
-"""Evaluation metrics for recommendation systems.
+"""Evaluation metrics for recommendation systems."""
+from __future__ import annotations
 
-Implements Precision@K, Recall@K, and NDCG@K for rigorous evaluation
-of recommendation quality beyond basic RMSE.
-"""
-
+import inspect
 import numpy as np
 
 
@@ -63,6 +61,30 @@ def evaluate_recommendations(user_item_matrix, recommend_fn,
     Returns:
         Dictionary with avg_precision_at_k, avg_recall_at_k, avg_ndcg_at_k.
     """
+    def _supports_matrix_arg(func) -> bool:
+        try:
+            sig = inspect.signature(func)
+        except (TypeError, ValueError):
+            return False
+
+        params = list(sig.parameters.values())
+        if any(p.kind == inspect.Parameter.VAR_POSITIONAL for p in params):
+            return True
+
+        positional = [
+            p for p in params
+            if p.kind in (
+                inspect.Parameter.POSITIONAL_ONLY,
+                inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            )
+        ]
+        return len(positional) >= 2
+
+    def _get_recommendations(func, user_id, eval_matrix):
+        if _supports_matrix_arg(func):
+            return func(user_id, eval_matrix)
+        return func(user_id)
+
     rng = np.random.RandomState(seed)
 
     # Filter to users with at least 2 interactions
@@ -73,9 +95,14 @@ def evaluate_recommendations(user_item_matrix, recommend_fn,
     precisions, recalls, ndcgs = [], [], []
 
     for user in sample_users:
-        relevant = set(user_item_matrix.columns[user_item_matrix.loc[user] == 1])
+        user_seen = user_item_matrix.columns[user_item_matrix.loc[user] == 1].tolist()
+        held_out = rng.choice(user_seen)
+        relevant = {held_out}
+        eval_matrix = user_item_matrix.copy()
+        eval_matrix.loc[user, held_out] = 0
+
         try:
-            recs = recommend_fn(user)
+            recs = _get_recommendations(recommend_fn, user, eval_matrix)
         except Exception:
             continue
 

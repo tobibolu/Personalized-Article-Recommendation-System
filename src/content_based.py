@@ -3,6 +3,7 @@
 Recommends articles similar to a given article based on textual features
 (title + description). Helps mitigate the cold-start problem for new articles.
 """
+from __future__ import annotations
 
 import numpy as np
 import pandas as pd
