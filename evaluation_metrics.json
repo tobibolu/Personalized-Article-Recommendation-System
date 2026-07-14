@@ -1,0 +1,49 @@
+{
+  "protocol": {
+    "type": "leave-one-out unseen-interaction ranking",
+    "eligible_users": 3591,
+    "evaluated_users": 1000,
+    "minimum_unique_interactions": 2,
+    "hidden_interactions_per_user": 1,
+    "seed": 42
+  },
+  "best_svd_factors_by_recall_at_10": 50,
+  "methods": {
+    "Popularity": {
+      "n_evaluated": 1000.0,
+      "precision@5": 0.0122,
+      "recall@5": 0.061,
+      "ndcg@5": 0.0341711901,
+      "precision@10": 0.0104,
+      "recall@10": 0.104,
+      "ndcg@10": 0.0479867464
+    },
+    "User-user CF": {
+      "n_evaluated": 1000.0,
+      "precision@5": 0.0204,
+      "recall@5": 0.102,
+      "ndcg@5": 0.0714212303,
+      "precision@10": 0.0154,
+      "recall@10": 0.154,
+      "ndcg@10": 0.0880703046
+    },
+    "Content-based": {
+      "n_evaluated": 1000.0,
+      "precision@5": 0.003,
+      "recall@5": 0.015,
+      "ndcg@5": 0.009940742,
+      "precision@10": 0.0027,
+      "recall@10": 0.027,
+      "ndcg@10": 0.013682738
+    },
+    "SVD (k=50)": {
+      "n_evaluated": 1000.0,
+      "precision@5": 0.0248,
+      "recall@5": 0.124,
+      "ndcg@5": 0.0876653334,
+      "precision@10": 0.0192,
+      "recall@10": 0.192,
+      "ndcg@10": 0.1096222395
+    }
+  }
+}
