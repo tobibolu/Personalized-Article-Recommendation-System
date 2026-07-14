@@ -8,9 +8,20 @@ import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from src.data_loader import load_interactions, load_articles, create_user_item_matrix
-from src.rank_recommender import get_top_articles, get_top_article_ids, recommendation_coverage
+from src.rank_recommender import (
+    get_top_articles,
+    get_top_article_ids,
+    get_popular_unseen,
+    recommendation_coverage,
+)
 from src.content_based import create_content_matrix, find_similar_articles
-from src.evaluation import precision_at_k, recall_at_k, ndcg_at_k
+from src.evaluation import (
+    evaluate_holdout,
+    leave_one_out_split,
+    ndcg_at_k,
+    precision_at_k,
+    recall_at_k,
+)
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
 
@@ -81,3 +92,42 @@ class TestEvaluationMetrics:
 
     def test_ndcg_zero(self):
         assert ndcg_at_k([3, 4], {1, 2}, k=2) == 0.0
+
+
+class TestUnseenInteractionEvaluation:
+    @pytest.fixture
+    def toy_matrix(self):
+        return pd.DataFrame(
+            [[1, 1, 0, 0], [1, 0, 1, 0], [0, 0, 0, 1]],
+            index=["u1", "u2", "u3"],
+            columns=[10, 20, 30, 40],
+        )
+
+    def test_leave_one_out_really_removes_an_interaction(self, toy_matrix):
+        train, holdout = leave_one_out_split(toy_matrix, seed=7)
+
+        assert set(holdout) == {"u1", "u2"}
+        assert toy_matrix.to_numpy().sum() == 5  # original input is unchanged
+        for user_id, relevant in holdout.items():
+            hidden = next(iter(relevant))
+            assert toy_matrix.loc[user_id, hidden] == 1
+            assert train.loc[user_id, hidden] == 0
+            assert train.loc[user_id].sum() == toy_matrix.loc[user_id].sum() - 1
+
+    def test_holdout_metrics_use_hidden_items(self):
+        holdout = {"u1": {20}, "u2": {30}}
+        recommendations = {"u1": [20, 10], "u2": [10, 30]}
+        result = evaluate_holdout(
+            holdout,
+            recommend_fn=lambda user_id, n: recommendations[user_id][:n],
+            k_values=(1, 2),
+        )
+
+        assert result["recall@1"] == 0.5
+        assert result["recall@2"] == 1.0
+        assert result["ndcg@1"] == 0.5
+        assert result["n_evaluated"] == 2
+
+    def test_popularity_baseline_never_returns_training_history(self, toy_matrix):
+        recs = get_popular_unseen("u1", toy_matrix, n=3)
+        assert not set(recs) & {10, 20}

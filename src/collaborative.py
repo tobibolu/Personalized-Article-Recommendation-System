@@ -17,7 +17,8 @@ def find_similar_users(user_id: str, user_item_matrix: pd.DataFrame) -> pd.Serie
     Returns:
         Series of similarity scores, sorted descending (excluding the target user).
     """
-    similarities = user_item_matrix.dot(user_item_matrix.loc[user_id])
+    interacted = user_item_matrix.columns[user_item_matrix.loc[user_id] == 1]
+    similarities = user_item_matrix.loc[:, interacted].sum(axis=1)
     return similarities.sort_values(ascending=False).drop(user_id)
 
 
@@ -38,18 +39,31 @@ def user_user_recs(user_id: str, user_item_matrix: pd.DataFrame, m: int = 10) ->
     Returns:
         List of recommended article IDs.
     """
-    similar_users = find_similar_users(user_id, user_item_matrix)
-    user_articles = set(get_user_articles(user_id, user_item_matrix))
+    similarities = find_similar_users(user_id, user_item_matrix)
+    similarities = similarities[similarities > 0].head(100)
+    if similarities.empty:
+        return []
 
-    recs = []
-    for sim_user in similar_users.index:
-        sim_user_articles = set(get_user_articles(sim_user, user_item_matrix))
-        new_articles = sim_user_articles - user_articles
-        recs.extend(list(new_articles))
-        if len(set(recs)) >= m:
-            break
+    seen = set(get_user_articles(user_id, user_item_matrix))
+    neighbour_matrix = user_item_matrix.loc[similarities.index]
 
-    return list(dict.fromkeys(recs))[:m]  # deduplicate while preserving order
+    # Articles read by more-similar neighbours receive more weight. Popularity
+    # and article ID provide deterministic tie-breaks.
+    weighted_score = neighbour_matrix.T.dot(similarities)
+    support = neighbour_matrix.sum(axis=0)
+    candidates = [
+        article_id
+        for article_id in user_item_matrix.columns
+        if article_id not in seen and weighted_score.loc[article_id] > 0
+    ]
+    candidates.sort(
+        key=lambda article_id: (
+            -weighted_score.loc[article_id],
+            -support.loc[article_id],
+            article_id,
+        )
+    )
+    return candidates[:m]
 
 
 def evaluate_collaborative(user_item_matrix: pd.DataFrame,

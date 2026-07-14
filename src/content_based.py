@@ -56,6 +56,36 @@ def find_similar_articles(article_id, articles_df: pd.DataFrame,
     return result
 
 
+def create_content_similarity(content_matrix) -> np.ndarray:
+    """Create a dense article-to-article cosine-similarity matrix."""
+    return cosine_similarity(content_matrix)
+
+
+def get_user_content_recs(user_id, user_item_matrix: pd.DataFrame,
+                          articles_df: pd.DataFrame, similarity_matrix: np.ndarray,
+                          n: int = 10) -> list:
+    """Recommend unseen articles similar to a user's training history.
+
+    Candidate scores are the mean cosine similarity to the articles still
+    visible in the leave-one-out training matrix.
+    """
+    article_ids = articles_df["article_id"].astype(int).tolist()
+    position = {article_id: idx for idx, article_id in enumerate(article_ids)}
+    seen = set(user_item_matrix.columns[user_item_matrix.loc[user_id] == 1])
+    profile_positions = [position[int(article_id)] for article_id in seen if int(article_id) in position]
+    if not profile_positions:
+        return []
+
+    scores = similarity_matrix[profile_positions].mean(axis=0)
+    available = set(int(article_id) for article_id in user_item_matrix.columns)
+    candidates = [
+        article_id for article_id in article_ids
+        if article_id in available and article_id not in seen
+    ]
+    candidates.sort(key=lambda article_id: (-scores[position[article_id]], article_id))
+    return candidates[:n]
+
+
 def evaluate_content_recommendations(articles_df: pd.DataFrame,
                                      sample_size: int = 100,
                                      seed: int = 42) -> dict:
