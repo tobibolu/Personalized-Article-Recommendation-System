@@ -15,7 +15,7 @@ All methods use the same reproducible leave-one-out split of 1,000 users sampled
 | TF-IDF content-based | 0.015 | 0.010 | 0.027 | 0.014 |
 | SVD, 50 factors | **0.124** | **0.088** | **0.192** | **0.110** |
 
-SVD with 50 factors recovers 19.2% of hidden articles within ten recommendations, compared with 10.4% for popularity—an **8.8 percentage-point offline Recall@10 improvement** on this fixed holdout.
+SVD with 50 factors recovers 19.2% of hidden articles within ten recommendations, compared with 10.4% for popularity, an **8.8 percentage-point offline Recall@10 improvement** on this fixed holdout.
 
 This is evidence of better offline ranking, not proof of user-engagement or revenue lift. Absolute recall remains modest, so SVD is an experiment candidate rather than a production-deployment claim.
 
